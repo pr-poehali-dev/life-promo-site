@@ -48,17 +48,28 @@ const AdminPanel = ({ onContentUpdate, initialData }: AdminPanelProps) => {
   const [password, setPassword] = useState('');
   const [content, setContent] = useState<ContentData>(initialData);
   const [activeTab, setActiveTab] = useState('services');
+  const [adminPassword, setAdminPassword] = useState('');
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const { toast } = useToast();
 
   useEffect(() => {
     const savedAuth = localStorage.getItem('admin_authenticated');
+    const savedPassword = localStorage.getItem('admin_password');
     if (savedAuth === 'true') {
       setIsAuthenticated(true);
+    }
+    if (savedPassword) {
+      setAdminPassword(savedPassword);
+    } else {
+      setAdminPassword('admin123');
+      localStorage.setItem('admin_password', 'admin123');
     }
   }, []);
 
   const handleLogin = () => {
-    if (password === 'admin123') {
+    if (password === adminPassword) {
       setIsAuthenticated(true);
       localStorage.setItem('admin_authenticated', 'true');
       toast({
@@ -137,6 +148,45 @@ const AdminPanel = ({ onContentUpdate, initialData }: AdminPanelProps) => {
     setContent({ ...content, contact: { ...content.contact, [field]: value } });
   };
 
+  const handleChangePassword = () => {
+    if (!newPassword || !confirmPassword) {
+      toast({
+        title: 'Ошибка',
+        description: 'Заполните все поля',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast({
+        title: 'Ошибка',
+        description: 'Пароль должен содержать минимум 6 символов',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast({
+        title: 'Ошибка',
+        description: 'Пароли не совпадают',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setAdminPassword(newPassword);
+    localStorage.setItem('admin_password', newPassword);
+    setShowPasswordDialog(false);
+    setNewPassword('');
+    setConfirmPassword('');
+    toast({
+      title: 'Успешно',
+      description: 'Пароль успешно изменён',
+    });
+  };
+
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-[#1A1F2C] flex items-center justify-center p-6">
@@ -200,7 +250,7 @@ const AdminPanel = ({ onContentUpdate, initialData }: AdminPanelProps) => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3 bg-white/5">
+          <TabsList className="grid w-full grid-cols-4 bg-white/5">
             <TabsTrigger value="services" className="data-[state=active]:bg-primary">
               <Icon name="Briefcase" size={18} className="mr-2" />
               Услуги
@@ -212,6 +262,10 @@ const AdminPanel = ({ onContentUpdate, initialData }: AdminPanelProps) => {
             <TabsTrigger value="contacts" className="data-[state=active]:bg-primary">
               <Icon name="Mail" size={18} className="mr-2" />
               Контакты
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="data-[state=active]:bg-primary">
+              <Icon name="Key" size={18} className="mr-2" />
+              Настройки
             </TabsTrigger>
           </TabsList>
 
@@ -450,6 +504,108 @@ const AdminPanel = ({ onContentUpdate, initialData }: AdminPanelProps) => {
                       <p className="text-xs font-medium mb-1">Адрес</p>
                       <p className="text-xs text-muted-foreground">{content.contact.address}</p>
                     </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="settings" className="space-y-6 mt-6">
+            <h2 className="text-2xl font-bold text-white">Настройки безопасности</h2>
+            <Card className="animate-fade-in">
+              <CardHeader>
+                <CardTitle>Изменение пароля администратора</CardTitle>
+                <CardDescription>
+                  Создайте надёжный пароль для защиты панели администратора
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="p-4 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 rounded-lg mb-4">
+                  <div className="flex gap-3">
+                    <Icon name="AlertTriangle" size={20} className="text-amber-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-amber-900 dark:text-amber-200 mb-1">
+                        Важно запомнить новый пароль
+                      </p>
+                      <p className="text-xs text-amber-700 dark:text-amber-300">
+                        После изменения пароля вам потребуется использовать его для входа в систему. 
+                        Сохраните пароль в надёжном месте.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <Label>Текущий пароль</Label>
+                  <div className="mt-2 p-3 bg-muted rounded-lg">
+                    <p className="text-sm font-mono">{'*'.repeat(adminPassword.length)}</p>
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="new-password">Новый пароль</Label>
+                  <Input
+                    id="new-password"
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Минимум 6 символов"
+                    className="mt-2"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Используйте буквы, цифры и специальные символы
+                  </p>
+                </div>
+
+                <div>
+                  <Label htmlFor="confirm-password">Подтвердите новый пароль</Label>
+                  <Input
+                    id="confirm-password"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Повторите новый пароль"
+                    className="mt-2"
+                  />
+                </div>
+
+                <div className="flex gap-3 pt-4">
+                  <Button onClick={handleChangePassword} className="flex-1">
+                    <Icon name="Check" size={18} className="mr-2" />
+                    Изменить пароль
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setNewPassword('');
+                      setConfirmPassword('');
+                    }}
+                  >
+                    <Icon name="X" size={18} className="mr-2" />
+                    Отменить
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Информация о системе</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex justify-between items-center py-2 border-b">
+                  <span className="text-sm text-muted-foreground">Версия админки</span>
+                  <span className="text-sm font-medium">1.0.0</span>
+                </div>
+                <div className="flex justify-between items-center py-2 border-b">
+                  <span className="text-sm text-muted-foreground">Хранилище данных</span>
+                  <span className="text-sm font-medium">LocalStorage</span>
+                </div>
+                <div className="flex justify-between items-center py-2">
+                  <span className="text-sm text-muted-foreground">Статус авторизации</span>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span className="text-sm font-medium text-green-600">Активна</span>
                   </div>
                 </div>
               </CardContent>
