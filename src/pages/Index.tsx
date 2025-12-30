@@ -1,10 +1,113 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Icon from '@/components/ui/icon';
 
+interface Service {
+  icon: string;
+  title: string;
+  description: string;
+}
+
+interface BlogPost {
+  category: string;
+  title: string;
+  excerpt: string;
+  date: string;
+  icon: string;
+}
+
+interface Contact {
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+}
+
+interface ContentData {
+  services: Service[];
+  blog: BlogPost[];
+  contact: Contact;
+}
+
+const defaultContent: ContentData = {
+  services: [
+    {
+      icon: 'Globe',
+      title: 'Корпоративные сайты',
+      description: 'Разработка представительских сайтов с премиальным дизайном и продуманной структурой'
+    },
+    {
+      icon: 'ShoppingCart',
+      title: 'Интернет-магазины',
+      description: 'Создание удобных e-commerce решений с высокой конверсией и современными платёжными системами'
+    },
+    {
+      icon: 'Megaphone',
+      title: 'Landing Page',
+      description: 'Эффективные посадочные страницы для рекламных кампаний и продвижения продуктов'
+    },
+    {
+      icon: 'Layout',
+      title: 'Web-приложения',
+      description: 'Разработка сложных интерактивных приложений и CRM-систем под ваши задачи'
+    },
+    {
+      icon: 'Smartphone',
+      title: 'Мобильная адаптация',
+      description: 'Оптимизация сайтов для идеального отображения на всех устройствах'
+    },
+    {
+      icon: 'TrendingUp',
+      title: 'SEO-продвижение',
+      description: 'Комплексное продвижение сайта в поисковых системах для привлечения клиентов'
+    }
+  ],
+  blog: [
+    {
+      category: 'Разработка',
+      title: 'Тренды веб-разработки 2024',
+      excerpt: 'Какие технологии и подходы будут актуальны в новом году',
+      date: '15 декабря 2024',
+      icon: 'Code'
+    },
+    {
+      category: 'Дизайн',
+      title: 'Психология цвета в интерфейсах',
+      excerpt: 'Как правильно выбрать цветовую схему для вашего сайта',
+      date: '10 декабря 2024',
+      icon: 'Palette'
+    },
+    {
+      category: 'Маркетинг',
+      title: 'Увеличение конверсии сайта',
+      excerpt: '10 проверенных способов повысить продажи через веб-сайт',
+      date: '5 декабря 2024',
+      icon: 'TrendingUp'
+    }
+  ],
+  contact: {
+    name: 'Life-Promo',
+    email: 'info@life-promo.ru',
+    phone: '+7 (999) 999-99-99',
+    address: 'Москва, ул. Примерная, 1'
+  }
+};
+
 const Index = () => {
   const [activeSection, setActiveSection] = useState('hero');
+  const [content, setContent] = useState<ContentData>(defaultContent);
+
+  useEffect(() => {
+    const savedContent = localStorage.getItem('site_content');
+    if (savedContent) {
+      try {
+        setContent(JSON.parse(savedContent));
+      } catch (e) {
+        console.error('Error loading content:', e);
+      }
+    }
+  }, []);
 
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
@@ -82,42 +185,11 @@ const Index = () => {
             </p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-            {[
-              {
-                icon: 'Globe',
-                title: 'Корпоративные сайты',
-                description: 'Разработка представительских сайтов с премиальным дизайном и продуманной структурой'
-              },
-              {
-                icon: 'ShoppingCart',
-                title: 'Интернет-магазины',
-                description: 'Создание удобных e-commerce решений с высокой конверсией и современными платёжными системами'
-              },
-              {
-                icon: 'Megaphone',
-                title: 'Landing Page',
-                description: 'Эффективные посадочные страницы для рекламных кампаний и продвижения продуктов'
-              },
-              {
-                icon: 'Layout',
-                title: 'Web-приложения',
-                description: 'Разработка сложных интерактивных приложений и CRM-систем под ваши задачи'
-              },
-              {
-                icon: 'Smartphone',
-                title: 'Мобильная адаптация',
-                description: 'Оптимизация сайтов для идеального отображения на всех устройствах'
-              },
-              {
-                icon: 'TrendingUp',
-                title: 'SEO-продвижение',
-                description: 'Комплексное продвижение сайта в поисковых системах для привлечения клиентов'
-              }
-            ].map((service, index) => (
+            {content.services.map((service, index) => (
               <Card key={index} className="hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
                 <CardHeader>
                   <div className="w-14 h-14 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
-                    <Icon name={service.icon} size={28} className="text-primary" />
+                    <Icon name={service.icon} fallback="Star" size={28} className="text-primary" />
                   </div>
                   <CardTitle className="text-xl mb-2">{service.title}</CardTitle>
                   <CardDescription className="text-base">{service.description}</CardDescription>
@@ -247,33 +319,11 @@ const Index = () => {
             </p>
           </div>
           <div className="grid md:grid-cols-3 gap-8">
-            {[
-              {
-                category: 'Разработка',
-                title: 'Тренды веб-разработки 2024',
-                excerpt: 'Какие технологии и подходы будут актуальны в новом году',
-                date: '15 декабря 2024',
-                icon: 'Code'
-              },
-              {
-                category: 'Дизайн',
-                title: 'Психология цвета в интерфейсах',
-                excerpt: 'Как правильно выбрать цветовую схему для вашего сайта',
-                date: '10 декабря 2024',
-                icon: 'Palette'
-              },
-              {
-                category: 'Маркетинг',
-                title: 'Увеличение конверсии сайта',
-                excerpt: '10 проверенных способов повысить продажи через веб-сайт',
-                date: '5 декабря 2024',
-                icon: 'TrendingUp'
-              }
-            ].map((post, index) => (
+            {content.blog.map((post, index) => (
               <Card key={index} className="hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer">
                 <CardHeader>
                   <div className="flex items-center gap-2 mb-4">
-                    <Icon name={post.icon} size={18} className="text-primary" />
+                    <Icon name={post.icon} fallback="FileText" size={18} className="text-primary" />
                     <span className="text-sm font-medium text-primary">{post.category}</span>
                   </div>
                   <CardTitle className="text-xl mb-3 hover:text-primary transition-colors">
@@ -305,8 +355,8 @@ const Index = () => {
                 <Icon name="Mail" size={24} className="text-primary" />
               </div>
               <h3 className="font-semibold mb-2">Email</h3>
-              <a href="mailto:info@life-promo.ru" className="text-primary hover:underline">
-                info@life-promo.ru
+              <a href={`mailto:${content.contact.email}`} className="text-primary hover:underline">
+                {content.contact.email}
               </a>
             </Card>
             <Card className="text-center p-6 hover:shadow-lg transition-shadow">
@@ -314,8 +364,8 @@ const Index = () => {
                 <Icon name="Phone" size={24} className="text-accent" />
               </div>
               <h3 className="font-semibold mb-2">Телефон</h3>
-              <a href="tel:+79999999999" className="text-accent hover:underline">
-                +7 (999) 999-99-99
+              <a href={`tel:${content.contact.phone.replace(/\D/g, '')}`} className="text-accent hover:underline">
+                {content.contact.phone}
               </a>
             </Card>
             <Card className="text-center p-6 hover:shadow-lg transition-shadow">
@@ -323,7 +373,7 @@ const Index = () => {
                 <Icon name="MapPin" size={24} className="text-primary" />
               </div>
               <h3 className="font-semibold mb-2">Офис</h3>
-              <p className="text-muted-foreground">Москва, ул. Примерная, 1</p>
+              <p className="text-muted-foreground">{content.contact.address}</p>
             </Card>
           </div>
           <Card className="p-8">
