@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Icon from '@/components/ui/icon';
+import Auth from '@/components/Auth';
+import Chat from '@/components/Chat';
+import { User } from '@/types/user';
 
 interface Service {
   icon: string;
@@ -99,6 +102,8 @@ const defaultContent: ContentData = {
 const Index = () => {
   const [activeSection, setActiveSection] = useState('hero');
   const [content, setContent] = useState<ContentData>(defaultContent);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [showChat, setShowChat] = useState(false);
 
   useEffect(() => {
     const savedContent = localStorage.getItem('site_content');
@@ -109,7 +114,31 @@ const Index = () => {
         console.error('Error loading content:', e);
       }
     }
+
+    const savedUser = localStorage.getItem('current_user');
+    if (savedUser) {
+      try {
+        setCurrentUser(JSON.parse(savedUser));
+      } catch (e) {
+        console.error('Error loading user:', e);
+      }
+    }
   }, []);
+
+  const handleLogin = (user: User) => {
+    setCurrentUser(user);
+    localStorage.setItem('current_user', JSON.stringify(user));
+  };
+
+  const handleLogout = () => {
+    setCurrentUser(null);
+    localStorage.removeItem('current_user');
+    setShowChat(false);
+  };
+
+  if (!currentUser) {
+    return <Auth onLogin={handleLogin} />;
+  }
 
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
@@ -143,9 +172,33 @@ const Index = () => {
                 Контакты
               </button>
             </div>
-            <Button onClick={() => scrollToSection('contacts')} className="hidden md:block">
-              Связаться
-            </Button>
+            <div className="flex items-center gap-3">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowChat(!showChat)}
+                className="relative"
+              >
+                <Icon name="MessageCircle" size={20} />
+              </Button>
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full flex items-center justify-center text-lg bg-muted">
+                  {currentUser.avatar.startsWith('data:') ? (
+                    <img src={currentUser.avatar} alt={currentUser.username} className="w-full h-full rounded-full object-cover" />
+                  ) : (
+                    currentUser.avatar
+                  )}
+                </div>
+                <span className="hidden md:block text-sm font-medium">{currentUser.username}</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleLogout}
+                >
+                  <Icon name="LogOut" size={18} />
+                </Button>
+              </div>
+            </div>
           </div>
         </nav>
       </header>
@@ -492,6 +545,8 @@ const Index = () => {
           </div>
         </div>
       </footer>
+
+      {showChat && <Chat currentUser={currentUser} onClose={() => setShowChat(false)} />}
     </div>
   );
 };

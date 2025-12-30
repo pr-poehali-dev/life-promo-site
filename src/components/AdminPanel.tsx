@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Icon from '@/components/ui/icon';
 import { useToast } from '@/hooks/use-toast';
 import ImageUpload from '@/components/ImageUpload';
+import { User, Message } from '@/types/user';
 
 interface Service {
   icon: string;
@@ -52,6 +53,9 @@ const AdminPanel = ({ onContentUpdate, initialData }: AdminPanelProps) => {
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [replyText, setReplyText] = useState('');
+  const [users, setUsers] = useState<User[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -65,6 +69,16 @@ const AdminPanel = ({ onContentUpdate, initialData }: AdminPanelProps) => {
     } else {
       setAdminPassword('admin123');
       localStorage.setItem('admin_password', 'admin123');
+    }
+
+    const savedUsers = localStorage.getItem('users');
+    if (savedUsers) {
+      setUsers(JSON.parse(savedUsers));
+    }
+
+    const savedMessages = localStorage.getItem('chat_messages');
+    if (savedMessages) {
+      setMessages(JSON.parse(savedMessages));
     }
   }, []);
 
@@ -187,6 +201,29 @@ const AdminPanel = ({ onContentUpdate, initialData }: AdminPanelProps) => {
     });
   };
 
+  const handleReply = () => {
+    if (!replyText.trim()) return;
+    
+    const adminMessage: Message = {
+      id: Date.now().toString(),
+      userId: 'admin',
+      username: 'Администратор',
+      avatar: '👨‍💼',
+      text: replyText,
+      timestamp: new Date().toISOString(),
+      isAdmin: true
+    };
+    
+    const updatedMessages = [...messages, adminMessage];
+    setMessages(updatedMessages);
+    localStorage.setItem('chat_messages', JSON.stringify(updatedMessages));
+    setReplyText('');
+    toast({
+      title: 'Сообщение отправлено',
+      description: 'Ответ отправлен пользователю',
+    });
+  };
+
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-[#1A1F2C] flex items-center justify-center p-6">
@@ -250,7 +287,7 @@ const AdminPanel = ({ onContentUpdate, initialData }: AdminPanelProps) => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4 bg-white/5">
+          <TabsList className="grid w-full grid-cols-5 bg-white/5">
             <TabsTrigger value="services" className="data-[state=active]:bg-primary">
               <Icon name="Briefcase" size={18} className="mr-2" />
               Услуги
@@ -262,6 +299,10 @@ const AdminPanel = ({ onContentUpdate, initialData }: AdminPanelProps) => {
             <TabsTrigger value="contacts" className="data-[state=active]:bg-primary">
               <Icon name="Mail" size={18} className="mr-2" />
               Контакты
+            </TabsTrigger>
+            <TabsTrigger value="users" className="data-[state=active]:bg-primary">
+              <Icon name="Users" size={18} className="mr-2" />
+              Пользователи
             </TabsTrigger>
             <TabsTrigger value="settings" className="data-[state=active]:bg-primary">
               <Icon name="Key" size={18} className="mr-2" />
@@ -510,6 +551,105 @@ const AdminPanel = ({ onContentUpdate, initialData }: AdminPanelProps) => {
             </Card>
           </TabsContent>
 
+          <TabsContent value="users" className="space-y-6 mt-6">
+            <h2 className="text-2xl font-bold text-white">Пользователи и сообщения</h2>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>Зарегистрированные пользователи</CardTitle>
+                <CardDescription>Список всех пользователей сайта</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {users.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Icon name="Users" size={48} className="mx-auto mb-3 opacity-30" />
+                      <p>Пока нет зарегистрированных пользователей</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {users.map((user) => (
+                        <div key={user.id} className="flex items-center gap-4 p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+                          <div className="w-12 h-12 rounded-full flex items-center justify-center text-2xl bg-muted">
+                            {user.avatar.startsWith('data:') ? (
+                              <img src={user.avatar} alt={user.username} className="w-full h-full rounded-full object-cover" />
+                            ) : (
+                              user.avatar
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="font-semibold">{user.username}</h4>
+                            <div className="text-sm text-muted-foreground space-y-1">
+                              {user.phone && <p>📱 {user.phone}</p>}
+                              {user.email && <p>✉️ {user.email}</p>}
+                              {user.telegram && <p>💬 {user.telegram}</p>}
+                            </div>
+                          </div>
+                          <div className="text-right text-xs text-muted-foreground">
+                            <p>Регистрация: {new Date(user.registeredAt).toLocaleDateString('ru-RU')}</p>
+                            <p>Последний вход: {new Date(user.lastLogin).toLocaleDateString('ru-RU')}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Чат с пользователями</CardTitle>
+                <CardDescription>Сообщения от пользователей</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {messages.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Icon name="MessageSquare" size={48} className="mx-auto mb-3 opacity-30" />
+                      <p>Пока нет сообщений</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4 max-h-[500px] overflow-y-auto">
+                      {messages.map((msg) => (
+                        <div key={msg.id} className={`flex gap-3 ${msg.isAdmin ? 'flex-row-reverse' : 'flex-row'}`}>
+                          <div className="w-10 h-10 rounded-full flex items-center justify-center text-xl bg-muted flex-shrink-0">
+                            {msg.avatar.startsWith('data:') ? (
+                              <img src={msg.avatar} alt={msg.username} className="w-full h-full rounded-full object-cover" />
+                            ) : (
+                              msg.avatar
+                            )}
+                          </div>
+                          <div className={`flex-1 ${msg.isAdmin ? 'text-right' : 'text-left'}`}>
+                            <p className="text-sm font-medium mb-1">{msg.username}</p>
+                            <div className={`inline-block px-4 py-2 rounded-lg ${
+                              msg.isAdmin ? 'bg-primary text-white' : 'bg-muted'
+                            }`}>
+                              <p className="text-sm">{msg.text}</p>
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {new Date(msg.timestamp).toLocaleString('ru-RU')}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                      <div className="pt-4 border-t">
+                        <Label>Ответить пользователю</Label>
+                        <div className="flex gap-2 mt-2">
+                          <Input
+                            value={replyText}
+                            onChange={(e) => setReplyText(e.target.value)}
+                            placeholder="Введите сообщение..."
+                            onKeyPress={(e) => e.key === 'Enter' && handleReply()}
+                          />
+                          <Button onClick={handleReply}>
+                            <Icon name="Send" size={18} />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           <TabsContent value="settings" className="space-y-6 mt-6">
             <h2 className="text-2xl font-bold text-white">Настройки безопасности</h2>
             <Card className="animate-fade-in">
@@ -583,6 +723,102 @@ const AdminPanel = ({ onContentUpdate, initialData }: AdminPanelProps) => {
                   >
                     <Icon name="X" size={18} className="mr-2" />
                     Отменить
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Резервное копирование</CardTitle>
+                <CardDescription>
+                  Экспорт и импорт всех данных сайта
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="p-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900 rounded-lg">
+                  <div className="flex gap-3">
+                    <Icon name="Info" size={20} className="text-blue-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-blue-900 dark:text-blue-200 mb-1">
+                        Что включает резервная копия
+                      </p>
+                      <ul className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
+                        <li>• Услуги и их изображения</li>
+                        <li>• Статьи блога и изображения</li>
+                        <li>• Контактная информация</li>
+                        <li>• Список пользователей</li>
+                        <li>• История сообщений чата</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <Button
+                    onClick={() => {
+                      const data = {
+                        site_content: localStorage.getItem('site_content'),
+                        users: localStorage.getItem('users'),
+                        chat_messages: localStorage.getItem('chat_messages'),
+                        admin_password: localStorage.getItem('admin_password'),
+                        exportDate: new Date().toISOString()
+                      };
+                      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = `backup-${new Date().toISOString().split('T')[0]}.json`;
+                      a.click();
+                      URL.revokeObjectURL(url);
+                      toast({
+                        title: 'Экспорт завершён',
+                        description: 'Файл резервной копии загружен',
+                      });
+                    }}
+                    className="flex-1"
+                  >
+                    <Icon name="Download" size={18} className="mr-2" />
+                    Экспорт
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      const input = document.createElement('input');
+                      input.type = 'file';
+                      input.accept = 'application/json';
+                      input.onchange = (e) => {
+                        const file = (e.target as HTMLInputElement).files?.[0];
+                        if (!file) return;
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                          try {
+                            const data = JSON.parse(e.target?.result as string);
+                            if (data.site_content) localStorage.setItem('site_content', data.site_content);
+                            if (data.users) localStorage.setItem('users', data.users);
+                            if (data.chat_messages) localStorage.setItem('chat_messages', data.chat_messages);
+                            if (data.admin_password) localStorage.setItem('admin_password', data.admin_password);
+                            toast({
+                              title: 'Импорт завершён',
+                              description: 'Данные успешно восстановлены. Перезагрузите страницу.',
+                            });
+                            setTimeout(() => window.location.reload(), 2000);
+                          } catch (error) {
+                            toast({
+                              title: 'Ошибка импорта',
+                              description: 'Неверный формат файла',
+                              variant: 'destructive',
+                            });
+                          }
+                        };
+                        reader.readAsText(file);
+                      };
+                      input.click();
+                    }}
+                    className="flex-1"
+                  >
+                    <Icon name="Upload" size={18} className="mr-2" />
+                    Импорт
                   </Button>
                 </div>
               </CardContent>
