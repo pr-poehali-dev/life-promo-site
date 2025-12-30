@@ -5,6 +5,7 @@ interface Service {
   icon: string;
   title: string;
   description: string;
+  image?: string;
 }
 
 interface BlogPost {
@@ -13,6 +14,7 @@ interface BlogPost {
   excerpt: string;
   date: string;
   icon: string;
+  image?: string;
 }
 
 interface Contact {

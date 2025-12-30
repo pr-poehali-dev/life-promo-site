@@ -7,6 +7,7 @@ interface Service {
   icon: string;
   title: string;
   description: string;
+  image?: string;
 }
 
 interface BlogPost {
@@ -15,6 +16,7 @@ interface BlogPost {
   excerpt: string;
   date: string;
   icon: string;
+  image?: string;
 }
 
 interface Contact {
@@ -186,7 +188,16 @@ const Index = () => {
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
             {content.services.map((service, index) => (
-              <Card key={index} className="hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+              <Card key={index} className="hover:shadow-lg transition-all duration-300 hover:-translate-y-1 overflow-hidden">
+                {service.image && (
+                  <div className="w-full h-48 overflow-hidden">
+                    <img
+                      src={service.image}
+                      alt={service.title}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
                 <CardHeader>
                   <div className="w-14 h-14 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
                     <Icon name={service.icon} fallback="Star" size={28} className="text-primary" />
@@ -320,7 +331,16 @@ const Index = () => {
           </div>
           <div className="grid md:grid-cols-3 gap-8">
             {content.blog.map((post, index) => (
-              <Card key={index} className="hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer">
+              <Card key={index} className="hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer overflow-hidden">
+                {post.image && (
+                  <div className="w-full h-48 overflow-hidden">
+                    <img
+                      src={post.image}
+                      alt={post.title}
+                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                    />
+                  </div>
+                )}
                 <CardHeader>
                   <div className="flex items-center gap-2 mb-4">
                     <Icon name={post.icon} fallback="FileText" size={18} className="text-primary" />

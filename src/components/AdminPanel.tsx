@@ -7,11 +7,13 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Icon from '@/components/ui/icon';
 import { useToast } from '@/hooks/use-toast';
+import ImageUpload from '@/components/ImageUpload';
 
 interface Service {
   icon: string;
   title: string;
   description: string;
+  image?: string;
 }
 
 interface BlogPost {
@@ -20,6 +22,7 @@ interface BlogPost {
   excerpt: string;
   date: string;
   icon: string;
+  image?: string;
 }
 
 interface Contact {
@@ -97,6 +100,7 @@ const AdminPanel = ({ onContentUpdate, initialData }: AdminPanelProps) => {
       icon: 'Star',
       title: 'Новая услуга',
       description: 'Описание услуги',
+      image: '',
     };
     setContent({ ...content, services: [...content.services, newService] });
   };
@@ -119,6 +123,7 @@ const AdminPanel = ({ onContentUpdate, initialData }: AdminPanelProps) => {
       excerpt: 'Краткое описание статьи',
       date: new Date().toLocaleDateString('ru-RU'),
       icon: 'FileText',
+      image: '',
     };
     setContent({ ...content, blog: [...content.blog, newPost] });
   };
@@ -234,6 +239,11 @@ const AdminPanel = ({ onContentUpdate, initialData }: AdminPanelProps) => {
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-4">
+                    <ImageUpload
+                      value={service.image}
+                      onChange={(url) => updateService(index, 'image', url)}
+                      label="Изображение услуги"
+                    />
                     <div className="grid md:grid-cols-3 gap-4">
                       <div>
                         <Label>Иконка (Lucide name)</Label>
@@ -303,6 +313,11 @@ const AdminPanel = ({ onContentUpdate, initialData }: AdminPanelProps) => {
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-4">
+                    <ImageUpload
+                      value={post.image}
+                      onChange={(url) => updateBlogPost(index, 'image', url)}
+                      label="Изображение статьи"
+                    />
                     <div className="grid md:grid-cols-3 gap-4">
                       <div>
                         <Label>Категория</Label>
